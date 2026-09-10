@@ -1,11 +1,9 @@
 # Building-my-own-OS-from-zero
-# AbsOS
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen.svg)]()
-[![Target Spec](https://img.shields.io/badge/target-x86--baremetal-orange.svg)]()
-
-A custom bare-metal operating system kernel built from scratch for the `x86` architecture. **AbsOS** aims to provide a lightweight monolithic core covering bootstrapping, low-level hardware interrupt handling, memory management, and device drivers.
+[![Target](https://img.shields.io/badge/target-x86__64--baremetal-orange.svg)]()
+[![Language](https://img.shields.io/badge/language-C%20%7C%20ASM-brightgreen.svg)]()
+[![Platform](https://img.shields.io/badge/environment-QEMU-purple.svg)]()
 
 ---
 
@@ -13,21 +11,24 @@ A custom bare-metal operating system kernel built from scratch for the `x86` arc
 
 - [Overview](#-overview)
 - [Requirements of this projects](#-requirements)
-- [Development Environment & Prerequisites](#-development-environment--prerequisites)
+- [Theoretical Foundation](#-theoretical-foundation)
 - [Getting Started](#-getting-started)
 - [Implementation Roadmap](#-implementation-roadmap)
 - [License](#-license)
 
 ---
 
-## 🎯 Overview
+## 📌 Overview
 
-AbsOS is a bare-metal operating system designed to run directly on hardware without relying on host operating system libraries (`-ffreestanding`). 
+This repository documents the step-by-step development of a custom x86 operating system built from scratch. 
+Coming into this project with a strong background in C programming but no prior experience in low-level operating system development, my goal is to explore bare-metal architecture, assembly bootloaders, and kernel design hands-on.
 
-### Core Goals
-* **Freestanding Codebase:** Written strictly in Assembly and C.
-* **Bare-Metal Execution:** Running directly on x86 hardware/emulators via QEMU.
-* **Core Subsystems:** Modular design separating bootstrapping, memory management, interrupt handling, and device drivers.
+### 💡 Transparency & AI Usage
+
+All code and technical documentation in this repository are written and understood by me to ensure high quality and clarity. AI tools are utilized solely to:
+* Proofread written documentation for grammar and spelling.
+* Verify technical accuracy and spot potential edge cases.
+* Serve as an interactive reference for low-level concepts.
 
 ---
 
@@ -60,6 +61,11 @@ ld --version
 qemu-system-x86_64 --version
 make --version
 ```
+
 To download them copy/paste this command:
-- sudo apt update && sudo apt install -y nasm gcc binutils qemu-system-x86 make
+
+``` bash
+sudo apt update && sudo apt install -y nasm gcc binutils qemu-system-x86 make
+```
+
 
