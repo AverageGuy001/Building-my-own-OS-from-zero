@@ -30,6 +30,8 @@ All code and technical documentation in this repository are written and understo
 * Verify technical accuracy and spot potential edge cases.
 * Serve as an interactive reference for low-level concepts.
 
+> ⚠️ **Prerequisite:** Please read the **Theoretical Foundation** section before exploring the code. The practical implementation relies on key architectural concepts that are explained there first.
+
 ---
 
 ## 📁 Requirements
