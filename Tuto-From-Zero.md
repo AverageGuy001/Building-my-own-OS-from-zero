@@ -79,7 +79,4 @@ This section is considered as the important one as you will be able to get a ful
 [ C Code ] ──► Compiler ──► [ Assembly ] ──► Assembler ──► [ Object File ] ──► Linker ──► [ Executable ] ──► [ CPU ]
 
 > Explanation:
-. We start with C code written by humans. Since the processor cannot understand high-level code directly, we use a Compiler (gcc) to translate the C logic into human-readable low-level Assembly code.
-. Next, the Assembler (nasm) converts that assembly code into low-level machine code (binary instructions) stored in an Object File (.o).
-. However, an object file is still incomplete—it contains unresolved memory addresses and function references.
-. Finally, the Linker (ld) combines all object files, resolves their memory layouts using a linker script, and outputs a complete executable ready file for the CPU to load and run.
+. We start with C code written by humans. Since the processor cannot understand high-level code directly, we use a Compiler (gcc) to translate the C logic into human-readable low-level Assembly code. Next, the Assembler (nasm) converts that assembly code into low-level machine code (binary instructions) stored in an Object File (.o).However, an object file is still incomplete—it contains unresolved memory addresses and function references. Finally, the Linker (ld) combines all object files, resolves their memory layouts using a linker script, and outputs a complete executable ready file for the CPU to load and run.
