@@ -76,18 +76,10 @@ This section is considered as the important one as you will be able to get a ful
 
 ### 1. The Compilation & Execution Pipeline:
 
-```mermaid
-flowchart TD
-    A["📄 C Source Code (.c)"] -->|"1. Preprocessor (cpp)"| B["📄 Expanded C Code (.i)"]
-    B -->|"2. Compiler (gcc)"| C["📄 Assembly Code (.s)"]
-    C -->|"3. Assembler (nasm / as)"| D["📦 Object File (.o)"]
-    
-    E["📄 Boot Assembly (_start)"] -->|"Assembler (nasm)"| F["📦 Boot Object (.o)"]
-    
-    D -->|"4. Linker (ld) + Linker Script"| G["⚡ Binary Kernel Image (.bin)"]
-    F -->|"4. Linker (ld) + Linker Script"| G
-    
-    G -->|"5. Load to Memory (0x7C00 / 0x100000)"| H["🧠 RAM"]
-    H -->|"6. Fetch -> Decode -> Execute"| I["💻 CPU Hardware Registers"]
-```
+[ C Code ] ──► Compiler ──► [ Assembly ] ──► Assembler ──► [ Object File ] ──► Linker ──► [ Executable ] ──► [ CPU ]
 
+> Explanation:
+. We start with C code written by humans. Since the processor cannot understand high-level code directly, we use a Compiler (gcc) to translate the C logic into human-readable low-level Assembly code.
+. Next, the Assembler (nasm) converts that assembly code into low-level machine code (binary instructions) stored in an Object File (.o).
+. However, an object file is still incomplete—it contains unresolved memory addresses and function references.
+. Finally, the Linker (ld) combines all object files, resolves their memory layouts using a linker script, and outputs a complete executable ready file for the CPU to load and run.
