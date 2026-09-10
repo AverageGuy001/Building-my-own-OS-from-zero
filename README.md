@@ -12,7 +12,7 @@ A custom bare-metal operating system kernel built from scratch for the `x86` arc
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
-- [Project Directory Structure](#-project-directory-structure)
+- [Requirements of this projects](#-requirements)
 - [Development Environment & Prerequisites](#-development-environment--prerequisites)
 - [Getting Started](#-getting-started)
 - [Implementation Roadmap](#-implementation-roadmap)
@@ -31,12 +31,35 @@ AbsOS is a bare-metal operating system designed to run directly on hardware with
 
 ---
 
-## 📁 Project Directory Structure
+## 📁 Requirements
 
-```text
-AbsOS/
-├── build/          # Compiled object files and final binary output
-├── docs/           # Architecture design notes and reference materials
-├── src/            # Kernel assembly and C source code
-├── README.md       # Project documentation
-└── Makefile        # Build system scripts
+In this project we will use:
+
+* **nasm** (Netwide Assembler): Assembler for bootloader/assembly code (low-level).
+* **gcc** (GNU Compiler Collection): Compiles C kernel code into object files.
+* **binutils** (provides `ld`): The GNU Linker (`ld`) combines object files into a single binary image.
+* **qemu-system-x86** (provides `qemu-system-x86_64`): Emulator to test the bootloader and kernel without bare metal.
+* **make** (GNU Make): Automates the entire compilation and linking process.
+
+| Tool | Tested Version |
+| :--- | :--- |
+| **NASM** | 2.15+ |
+| **GCC** | 11.0+ |
+| **GNU Linker (`ld`)** | 2.38+ |
+| **QEMU** | 6.2+ |
+| **GNU Make** | 4.3+ |
+
+### Version Check
+
+Run these commands to verify your local versions:
+
+```bash
+nasm -v
+gcc --version
+ld --version
+qemu-system-x86_64 --version
+make --version
+```
+To download them copy/paste this command:
+- sudo apt update && sudo apt install -y nasm gcc binutils qemu-system-x86 make
+
