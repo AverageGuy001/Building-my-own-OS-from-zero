@@ -30,7 +30,6 @@ All code and technical documentation in this repository are written and understo
 * Verify technical accuracy and spot potential edge cases.
 * Serve as an interactive reference for low-level concepts.
 
-> ⚠️ **Prerequisite:** Please read the **Theoretical Foundation** section before exploring the code. The practical implementation relies on key architectural concepts that are explained there first.
 
 ---
 
@@ -69,5 +68,26 @@ To download them copy/paste this command:
 ``` bash
 sudo apt update && sudo apt install -y nasm gcc binutils qemu-system-x86 make
 ```
+## 🧠 Theoretical Foundation:
 
+> ⚠️ **Prerequisite:** Please read the **Theoretical Foundation** section before exploring the code. The practical implementation relies on key architectural concepts that are explained there first.
+
+This section is considered as the important one as you will be able to get a full general idea of the OS development and whenever something is new appeared, i will noticed it with details of course.
+
+### 1. The Compilation & Execution Pipeline:
+
+```mermaid
+flowchart TD
+    A["📄 C Source Code (.c)"] -->|"1. Preprocessor (cpp)"| B["📄 Expanded C Code (.i)"]
+    B -->|"2. Compiler (gcc)"| C["📄 Assembly Code (.s)"]
+    C -->|"3. Assembler (nasm / as)"| D["📦 Object File (.o)"]
+    
+    E["📄 Boot Assembly (_start)"] -->|"Assembler (nasm)"| F["📦 Boot Object (.o)"]
+    
+    D -->|"4. Linker (ld) + Linker Script"| G["⚡ Binary Kernel Image (.bin)"]
+    F -->|"4. Linker (ld) + Linker Script"| G
+    
+    G -->|"5. Load to Memory (0x7C00 / 0x100000)"| H["🧠 RAM"]
+    H -->|"6. Fetch -> Decode -> Execute"| I["💻 CPU Hardware Registers"]
+```
 
