@@ -212,3 +212,61 @@ According to the ISO C Standard, C execution environments are categorized into t
 | **Compiler Flags** | Default GCC behavior | Requires `-ffreestanding -nostdlib -fno-builtin` |
 
 In summary, a **Freestanding C Environment** operates on bare metal without OS support or built-in standard library functions, whereas a **Hosted C Environment** relies on an underlying operating system to provide full standard library.
+
+### 3. Assembly Essentials :
+
+i will represent some basic commands that casually you will meet them:
+
+```nasm
+### Data Transfer & Arithmetic:
+
+mov dest, src           ; dest = src
+lea rax, [rbx + 8]      ; RAX = RBX + 8 (Calculates effective memory address without dereferencing)
+mov rax, [rbx + 8]      ; RAX = Memory[RBX + 8] (Dereferences pointer to fetch stored value)
+add a, b                ; a = a + b
+sub a, b                ; a = a - b
+[RAX + i * 4]           ; Array index offset: arr[i] where element size is 4 bytes (int32)
+
+### Comparaison & Logic:
+
+cmp a, b                ; Computes (a - b) to set CPU flags (does NOT modify register 'a')
+test a, a               ; Computes bitwise (a & a) to check if 'a' is zero or negative
+
+### Control Flow & Conditionals:
+
+jmp label               ; Unconditional jump to target address
+je  label               ; Jump if Equal 
+jne label               ; Jump if Not Equal 
+jg  label               ; Jump if Greater
+jl  label               ; Jump if Less
+
+-> for example:
+section .text
+global _start
+
+_start:
+    mov eax, 10         ; EAX = 10
+    
+    cmp eax, 10         ; Compare EAX with 10 (computes EAX - 10)
+    je  .is_equal       ; Jump to '.is_equal' if Zero Flag (ZF) is set (i.e., EAX == 10)
+
+.is_not_equal:
+    mov ebx, 0          ; Return status code 0 (False)
+    jmp .exit
+
+.is_equal:
+    mov ebx, 1          ; Return status code 1 (True)
+
+.exit:
+    mov eax, 1          ; Linux sys_exit system call number
+    int 0x80            ; Call Linux kernel interrupt
+```
+Ignore the other part that are new and focus u see the value of eax = 10 then direclty jump to the lable of the equal case and follow the instructions at the end we got ebx = 1 and eax = 10.
+
+- Push vs Pop :
+   ```nasm
+   push rax
+   pop rax
+   ```
+  we know that the RSP is reserved for the top of the stack so when you push rax where what happened:
+  
