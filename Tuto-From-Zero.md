@@ -303,4 +303,9 @@ Ignore the other part that are new and focus u see the value of eax = 10 then di
   └──────────────────┘          └──────────────────┘          └──────────────────┘
    (High Addresses)               (Low Addresses ↓)            (RSP restored ↑)
   ```
-  
+
+### 🚀 Getting Started:
+
+After understanding the theorical part now we have the knowledge to dive into starting into making an OS from zero.
+
+
