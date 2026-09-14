@@ -269,7 +269,9 @@ Ignore the other part that are new and focus u see the value of eax = 10 then di
    pop rax
    ```
   -> push rax: Decrements RSP by 8 bytes (RSP = RSP - 8) and writes the value of RAX to [RSP].
+  
   -> pop rax: Reads the value at [RSP] into RAX and increments RSP by 8 bytes (RSP = RSP + 8).
+  
   ```text
   BEFORE PUSH                    AFTER PUSH                    AFTER POP
   ┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
@@ -278,6 +280,26 @@ Ignore the other part that are new and focus u see the value of eax = 10 then di
   │ 0x000000000000   │ ◄─ RSP   │ 0x000000000000   │          │ 0x000000000000   │ ◄─ RSP
   ├──────────────────┤          ├──────────────────┤          ├──────────────────┤
   │                  │          │ Value of RAX     │ ◄─ RSP   │ [Popped/Garbage] │
+  └──────────────────┘          └──────────────────┘          └──────────────────┘
+   (High Addresses)               (Low Addresses ↓)            (RSP restored ↑)
+  ```
+- call & ret :
+  ```nasm
+    call function_name
+    ret
+  ```
+  -> call : Pushes the return address onto the stack the jumps execution to the target function (RIP = function_name).
+
+  -> ret : Pops the return address from the top of the stack into RIP then resumes execution right after the original call instruction.
+  
+  ```text
+   BEFORE CALL                     DURING CALL                    AFTER RET
+  ┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
+  │ [Caller Stack]   │          │ [Caller Stack]   │          │ [Caller Stack]   │
+  ├──────────────────┤          ├──────────────────┤          ├──────────────────┤
+  │ Previous Frame   │ ◄─ RSP   │ Previous Frame   │          │ Previous Frame   │ ◄─ RSP
+  ├──────────────────┤          ├──────────────────┤          ├──────────────────┤
+  │                  │          │ Return Address   │ ◄─ RSP   │ [Popped/Garbage] │
   └──────────────────┘          └──────────────────┘          └──────────────────┘
    (High Addresses)               (Low Addresses ↓)            (RSP restored ↑)
   ```
