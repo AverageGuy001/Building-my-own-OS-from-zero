@@ -268,5 +268,17 @@ Ignore the other part that are new and focus u see the value of eax = 10 then di
    push rax
    pop rax
    ```
-  we know that the RSP is reserved for the top of the stack so when you push rax where what happened:
+  -> push rax: Decrements RSP by 8 bytes (RSP = RSP - 8) and writes the value of RAX to [RSP].
+  -> pop rax: Reads the value at [RSP] into RAX and increments RSP by 8 bytes (RSP = RSP + 8).
+  ```text
+  BEFORE PUSH                    AFTER PUSH                    AFTER POP
+  ┌──────────────────┐          ┌──────────────────┐          ┌──────────────────┐
+  │ [Unused Stack]   │          │ [Unused Stack]   │          │ [Unused Stack]   │
+  ├──────────────────┤          ├──────────────────┤          ├──────────────────┤
+  │ 0x000000000000   │ ◄─ RSP   │ 0x000000000000   │          │ 0x000000000000   │ ◄─ RSP
+  ├──────────────────┤          ├──────────────────┤          ├──────────────────┤
+  │                  │          │ Value of RAX     │ ◄─ RSP   │ [Popped/Garbage] │
+  └──────────────────┘          └──────────────────┘          └──────────────────┘
+   (High Addresses)               (Low Addresses ↓)            (RSP restored ↑)
+  ```
   
