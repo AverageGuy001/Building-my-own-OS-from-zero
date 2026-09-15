@@ -308,4 +308,37 @@ Ignore the other part that are new and focus u see the value of eax = 10 then di
 
 After understanding the theorical part now we have the knowledge to dive into starting into making an OS from zero.
 
+### level 1 : Bootloader (loading more code)
+
+```nasm
+  int 0x13
+```
+
+-> is a BIOS service disk and one of its functions lets us read sectors from the boot disk.
+
+Conceptually:
+
+```text
+             Bootloader
+                 │
+                 │ int 0x13
+                 ▼
+               BIOS
+                 │
+          read disk sectors
+                 │
+                 ▼
+                RAM
+```
+
+And because we don't have an OS so we must load specific parameters into CPU registers so the BIOS knows what to read , where to find it ,...
+
+```nasm
+  mov ah, 0x02    ; Service Number: Read Sectors From Drive
+  mov al, 1       ; Number of sectors to read (1 sector = 512 bytes)
+  mov ch, 0       ; Cylinder number (0 to 1023)
+  mov cl, 2       ; Sector number (1 to 63) — Note: Sectors start at 1, NOT 0!
+  mov dh, 0       ; Head number (0 to 255)
+  mov dl, 0x80    ; Drive number (0x00 = Floppy 1, 0x80 = Hard Drive 1)
+```
 
