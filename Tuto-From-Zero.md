@@ -341,4 +341,188 @@ And because we don't have an OS so we must load specific parameters into CPU reg
   mov dh, 0       ; Head number (0 to 255)
   mov dl, 0x80    ; Drive number (0x00 = Floppy 1, 0x80 = Hard Drive 1)
 ```
+Here are 3 parameters that are important to know about them CHS addressing (Cylinder , Head , Sector):
 
+```text
+                    ┌─────────────────────────────────┐
+                    │      TOP PLATTER (Head 0)       │
+                    └────────────────┬────────────────┘
+                                     │
+                        . - - - - - -│- - - - - .
+                    . '              │            ' .
+                . '     ┌────────────┴──────────┐     ' .
+              .         │  TRACK / CYLINDER 0   │         .
+            .       . - │ - - - - - - - - - - . │ - .       .
+           .      . '   └───────────────────────┘   ' .      .
+          .     . '           Outer Ring              ' .     .
+         .     .                                          .    .
+         │    │     Sector 1         │       Sector 2      │   │
+         │    │    [ 512 Bytes ]     │      [ 512 Bytes ]  │   │
+         │    │   (Boot Sector)      │    (Kernel Code)    │   │
+         │────┼──────────────────────┼─────────────────────┼───│ ◄─ HEAD 0
+         │    │                      │                     │   │   (Reads top surface)
+         │    │     Sector 4         │       Sector 3      │   │
+         │    │    [ 512 Bytes ]     │      [ 512 Bytes ]  │   │
+         .     .                                          .    .
+          .     . '                                   ' .     .
+           .      . '                               ' .      .
+            .       ' - . - - - - - - - - - - - . '       .
+              .         ' .                   ' .         .
+                . '         ' - - - - - - - '         ' .
+                    ' .                           . '
+                        ' - - - - - - - - - - - '
+
+                    ┌─────────────────────────────────┐
+                    │    BOTTOM PLATTER (Head 1)      │
+                    └────────────────┬────────────────┘
+                                     │
+                        . - - - - - -│- - - - - .
+                    . '              │            ' .
+                . '     ┌────────────┴──────────┐     ' .
+              .         │  TRACK / CYLINDER 0   │         .
+            .       . - │ - - - - - - - - - - . │ - .       .
+           .      . '   └───────────────────────┘   ' .      .
+          .     . '           Outer Ring              ' .     .
+         .     .                                          .    .
+         │────┼────────────────────────────────────────────┼───│ ◄─ HEAD 1
+         │    │                                            │   │   (Reads bottom surface)
+         .     .                                          .    .
+          .     . '                                   ' .     .
+           .      . '                               ' .      .
+            .       ' - . - - - - - - - - - - - . '       .
+              .         ' .                   ' .         .
+                . '         ' - - - - - - - '         ' .
+                    ' .                           . '
+                        ' - - - - - - - - - - - '
+```
+
+>As you can see, each platter possesses 2 heads (one for the top surface and one for the bottom surface). Each platter surface is divided into concentric rings called tracks. The vertical stack of matching track rings across all platter surfaces forms a cylinder. Finally, a sector is simply a 512-byte arc slice of a track ring.
+
+-> ```int 0x13``` doesn't execute the specific sector. It copies its bytes from disk to the RAM.
+
+### How does the CPU know where its code is?
+
+The CPU uses two registers : 
+
+```bash
+  CS = Code Segment
+  IP = Instruction Pointer
+  Together is CS:IP
+  The physical address = CS × 16 + IP
+```
+-> So the CPU will execute code at the physical address.
+```text
+  RAM
+  
+  0x7C00 ┌──────────────────────┐
+         │ Stage 1              │
+         │ bootloader           │
+         └──────────────────────┘
+  
+  0x1000 ┌──────────────────────┐
+         │ Stage 2              │
+         │ loaded from sector 2 │
+         └──────────────────────┘
+```
+>Here we can see that first CPU will execute code at 0x7C00 but we also have the stage 2 which contains code , in order to tell the CPU to jump at 0x1000 here comes the IP which tells the CPU the next instruction
+
+Let's do an example to show u how it works: 
+
+-> We have two files boot.asm and stage2.asm that are separated . QEMU needs to see them as one disk:
+```text
+disk.img
+┌────────────────────────┐
+│ Sector 1               │
+│ Stage 1 / boot.asm     │
+├────────────────────────┤
+│ Sector 2               │
+│ Stage 2 / stage2.asm   │
+└────────────────────────┘
+```
+For the stage2.asm : 
+
+```nasm
+  bits 16
+
+  start:
+    mov ah, 0x0e
+    mov al, 'B'
+    int 0x10
+    jmp $
+  times 512-($-$$) db 0
+```
+
+For the boot.asm:
+
+```nasm
+bits 16
+
+start:
+    ; Print A
+    mov ah, 0x0e
+    mov al, 'A'
+    int 0x10
+
+    ; Save boot drive
+    mov [boot_drive], dl
+
+    ; Destination = 0000:1000
+    mov ax, 0
+    mov es, ax
+    mov bx, 0x1000
+
+    ; Read Stage 2 from sector 2
+    mov ah, 0x02
+    mov al, 1
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [boot_drive]
+
+    int 0x13
+
+    ; Jump to Stage 2
+    jmp 0x0000:0x1000
+
+boot_drive db 0
+
+times 510-($-$$) db 0
+dw 0xAA55
+
+```
+
+Now that the code is ready in the directory of this two files:
+
+```bash
+nasm -f bin boot.asm -o boot.bin
+nasm -f bin stage2.asm -o stage2.bin
+```
+Check if it really 512 bytes by using this command : 
+
+```bash
+  wc -c boot.bin stage2.bin
+  the result :
+  512 boot.bin
+  512 stage2.bin
+```
+Now we create the disk image that will combine both files :
+```bash
+cat boot.bin stage2.bin > disk.img
+```
+Then: 
+```bash
+qemu-system-x86_64 -drive format=raw,file=disk.img
+```
+<img width="1919" height="1026" alt="image" src="https://github.com/user-attachments/assets/13482565-fd1b-439d-ba83-22ed01efa6f8" />
+
+-> By that we make a two-stage boatloader:
+```text
+BIOS
+ ↓
+Stage 1 (boot.asm)
+ ↓ prints A
+ ↓ BIOS int 13h reads sector 2
+ ↓
+Stage 2 (stage2.asm)
+ ↓ prints B
+```
