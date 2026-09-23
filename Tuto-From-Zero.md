@@ -526,3 +526,42 @@ Stage 1 (boot.asm)
 Stage 2 (stage2.asm)
  ↓ prints B
 ```
+
+>From the start we use 16 bit mode that is used for old architectures so in order to build a modern x86-64 kernel we will got to the 64 bit real mode.
+
+### leaving 16-bit Real Mode :
+
+There's an important historical progression:
+
+```text
+8086
+ │
+ │ 16-bit Real Mode
+ ▼
+80286+
+ │
+ │ Protected Mode
+ ▼
+x86-64
+ │
+ │ Long Mode
+ ▼
+64-bit execution
+```
+>When building a modern x86-64 kernel, we must explicitly perform a step-by-step mode transition. The CPU cannot switch directly from Real Mode to Long Mode; entering 64-bit mode requires satisfying specific hardware prerequisites—such as setting up page tables, configuring control registers, and loading a 64-bit GDT—to transition the processor into Long Mode safely.
+
+-> GDT (Global Descriptor Table) : In protected mode , the CPU needs information descibing memory segements.
+
+```text
+  GDT
+  ┌──────────────────────────────┐
+  │ Entry 0: Null descriptor     │--------------------------> safety mechanism used in case if a program uses an uninitialized or zeroed segment registerthen the CPU immediately triggers a General Protection Fault.
+  ├──────────────────────────────┤
+  │ Entry 1: Code segment        │--------------------------> defines the memory properties for the executable CPU instructions.
+  ├──────────────────────────────┤
+  │ Entry 2: Data segment        │--------------------------> Defines memory properties for reading and writing variable, data,...
+  └──────────────────────────────┘
+```
+
+- In real mode we know that ```physical address = segment × 16 + offset``` , but in the protected mode is just simply multiplying by 16.
+- 
