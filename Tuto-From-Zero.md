@@ -557,11 +557,26 @@ x86-64
   ┌──────────────────────────────┐
   │ Entry 0: Null descriptor     │--------------------------> safety mechanism used in case if a program uses an uninitialized or zeroed segment registerthen the CPU immediately triggers a General Protection Fault.
   ├──────────────────────────────┤
-  │ Entry 1: Code segment        │--------------------------> defines the memory properties for the executable CPU instructions.
+  │ Entry 1: Code segment        │--------------------------> defines the memory properties for the executable CPU instructions. (we use CS)
   ├──────────────────────────────┤
-  │ Entry 2: Data segment        │--------------------------> Defines memory properties for reading and writing variable, data,...
+  │ Entry 2: Data segment        │--------------------------> Defines memory properties for reading and writing variable, data,... (we use DS)
   └──────────────────────────────┘
 ```
 
 - In real mode we know that ```physical address = segment × 16 + offset``` , but in the protected mode is just simply multiplying by 16.
-- 
+  
+-> What's inside a GDT entry?
+
+A GDT entry contain 8 bits means if the entry 0 had ```0x00``` means the entry 1 have ```0x08``` and the entry 2 have ```0x10``` . In each entry we have :
+
+```text
+┌─────────────────────────────┐
+│ Base address                │-------------------------> where the segment start we will take that the base = 0 means the segments start at 0.
+│ Limit                       │-------------------------> How large the segment is allowed to be.
+│ Access / permissions        │-------------------------> Tell if this executable? readable? a data? ...
+│ Flags                       │-------------------------> Describe things such as the operand/address size and granularity.
+└─────────────────────────────┘
+```
+> We can observe that a table when we describe that parameters to enter into protected mode , if we wanna let the CPU to use that GDT we must tell him where is it ? and what is his size . The solution is to create GDT descriptor that contains the limit and the base.
+
+
