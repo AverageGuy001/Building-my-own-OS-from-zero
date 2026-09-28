@@ -577,6 +577,65 @@ A GDT entry contain 8 bits means if the entry 0 had ```0x00``` means the entry 1
 │ Flags                       │-------------------------> Describe things such as the operand/address size and granularity.
 └─────────────────────────────┘
 ```
+
 > We can observe that a table when we describe that parameters to enter into protected mode , if we wanna let the CPU to use that GDT we must tell him where is it ? and what is his size . The solution is to create GDT descriptor that contains the limit and the base.
 
+Let's dive more in the concept of the GDT to see how the CPU divides this and we will got :
 
+```text
+┌────────────┬────────────┬──────────────┬────────┬────────────┐
+│ Base 31:24 │   Flags    │ Limit 19:16  │ Access │ Base 23:16 │
+├────────────┴────────────┴──────────────┴────────┴────────────┤
+│                         Base 15:0                            │           For this layout is normalized because that's how the x86 GDT descriptor format is physically packed into 64 bits.
+├──────────────────────────────────────────────────────────────┤
+│                         Limit 15:0                           │
+└──────────────────────────────────────────────────────────────┘
+
+-> Base = Base 31:24 | Base 23:16 | Base 15:0
+-> Limit = Limit 19:16 | Limit 15:0
+
+```
+-> We have ```base = 0 ``` so : ```base31:24 = 0 & base23:16 = 0 & Base 15:0  = 0```.
+-> We have ```Limit = 0xFFFFF``` so : ```Limit 15:0  = 0xFFFF & Limit 19:16 = 0xF```.
+
+*For the access Byte :
+
+```text
+7   6 5   4   3   2   1   0                
+┌───┬───┬───┬───┬───┬───┬───┐
+│ P │DPL│ S │ E │DC │RW │ A │
+└───┴───┴───┴───┴───┴───┴───┘
+P   = 1   present
+DPL = 00  kernel privilege
+S   = 1   code/data descriptor
+E   = 1   executable
+DC  = 0
+RW  = 1   readable
+A   = 0
+```
+-> So if we take 1001 1010 we got 0x9A.
+
+*For the Flags(4bits):
+
+```text
+G   = 1    4 KiB granularity
+D/B = 1    32-bit
+L   = 0    not 64-bit code
+AVL = 0
+```
+So if we take 1100 we got 0xC.
+
+>Remember: the flags occupy the upper 4 bits of that byte, while the lower 4 bits contain Limit 19:16. In other words we will have 0xCF.
+
+Now putting everything together:
+```text
+Base  = 00000000
+Limit = FFFFF
+Access = 9A
+Flags  = C
+```
+The 8-byte descriptor becomes:
+```bash
+                          hexadecimal format                            data format
+00 CF 9A 00 00 00 FF FF -----------------------> 0x00CF9A000000FFFF -----------------------> 0x00CF92000000FFFF
+```
