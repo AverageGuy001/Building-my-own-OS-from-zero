@@ -639,3 +639,189 @@ The 8-byte descriptor becomes:
                           hexadecimal format                            data format
 00 CF 9A 00 00 00 FF FF -----------------------> 0x00CF9A000000FFFF -----------------------> 0x00CF92000000FFFF
 ```
+
+-> No we can make a GDT in nasm:
+
+-Add this GDT in the stage2.asm :
+
+> new asm command : ```or eax, 1 ``` is like the operator OR we know in maths and programming
+
+```nasm
+cli
+lgdt[gdt_descriptor]
+
+;Enable Protected mode
+
+mov eax , cr0           ---------------
+or eax , 1                            |-----> This part is where we switch into protected mode , CR0 is a control register his bit_0 = PE if it's = 0 means real mode and if its 1 is protected mode
+mov cr0, eax            ---------------                
+
+jmp 0x08:protected_mode_entry
+
+bits 32
+
+protected_mode_entry:
+        gdt_start:
+                dq 0x0000000000000000
+                dq 0x00CF9A000000FFFF
+                dq 0x00CF92000000FFFF
+        gdt_end:
+
+gdt_descriptor:
+        dw gdt_end - gdt_start -1
+        dd gdt_start
+
+boot_drive db 0
+```
+
+-Now assemble and check if its his size its 512:
+
+```nasm
+nasm -f bin stage2.asm -o stage2.bin
+stat -c%s stage2.bin
+```
+
+-We rebuild the image assuming this files and for the size it must be 2560(512 +512 +1536): 
+
+```nasm
+
+boot.bin
+stage2.bin
+kernel.bin
+
+cat boot.bin stage2.bin kernel.bin > disk.img
+stat -c%s sdisk.img
+```
+
+-The final step is booting using Qemu:
+
+```nasm
+qemu-system-x86_64 -drive format=raw,file=disk.img
+```
+-If some trouble happened check that the code of the stage2.asm:
+
+```nasm
+org 0x1000
+bits 16
+
+start:
+
+    ; -------------------------
+    ; Set DS = 0
+    ; -------------------------
+    xor ax, ax
+    mov ds, ax
+
+
+    ; -------------------------
+    ; Prove Stage 2 started
+    ; -------------------------
+    mov ah, 0x0e
+    mov al, 'B'
+    int 0x10
+
+
+    ; -------------------------
+    ; Save boot drive
+    ; -------------------------
+    mov [boot_drive], dl
+
+
+    ; -------------------------
+    ; Load kernel at 0x2000
+    ; -------------------------
+    mov ax, 0
+    mov es, ax
+    mov bx, 0x2000
+
+    ; Read sectors 3, 4, 5
+    mov ah, 0x02
+    mov al, 3
+    mov ch, 0
+    mov cl, 3
+    mov dh, 0
+    mov dl, [boot_drive]
+
+    int 0x13
+
+
+    ; -------------------------
+    ; Enter Protected Mode
+    ; -------------------------
+
+    cli
+
+    ; Load GDT
+    lgdt [gdt_descriptor]
+
+    ; Set CR0.PE = 1
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+
+    ; IMPORTANT:
+    ; 16-bit -> 32-bit far jump
+    jmp dword 0x08:protected_mode_entry
+
+
+; ==================================================
+; 32-bit Protected Mode
+; ==================================================
+
+bits 32
+
+protected_mode_entry:
+
+    ; 0x10 = GDT entry 2 = Data
+    mov ax, 0x10
+
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+
+    ; Protected Mode reached
+    jmp $
+
+
+; ==================================================
+; GDT
+; ==================================================
+
+bits 16
+
+gdt_start:
+
+    ; Entry 0: Null
+    dq 0x0000000000000000
+
+    ; Entry 1: Code
+    dq 0x00CF9A000000FFFF
+
+    ; Entry 2: Data
+    dq 0x00CF92000000FFFF
+
+gdt_end:
+
+
+; ==================================================
+; GDT Descriptor
+; ==================================================
+
+gdt_descriptor:
+
+    ; Limit = GDT size - 1
+    dw gdt_end - gdt_start - 1
+
+    ; Base = physical address of GDT
+    dd gdt_start
+
+
+boot_drive db 0
+
+
+; Stage 2 = exactly 512 bytes
+times 512-($-$$) db 0
+```
+-And the result is AB means we got into the protected mode and we re in the level of 32 bits.
+
+<img width="1917" height="1028" alt="image" src="https://github.com/user-attachments/assets/bd3ea8c6-2876-4958-8a7a-7a2a3f56d431" />
