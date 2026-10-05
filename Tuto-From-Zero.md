@@ -890,5 +890,103 @@ Physical page
 
 -Entry : one slot inside a page table that contains information like : writable, permissions, next table ,...
 
-> For our case , we will use an identity mapping in order to make our learning simple for now so we tell the CPU basically the virtual address is the same as the physical one.
+> For our case , we will use an identity mapping in order to make our learning simple for now so we tell the CPU basically the virtual address is the same as the physical one. And because we are working on x86-64 then we need larger pages , we can use 2MiB (0x200000 = 2 MiB).
+
+-By using the 2MiB page:
+```text
+PML4
+ ↓
+PDPT
+ ↓
+PD
+ ↓
+2 MiB page
+```
+
+-PS or page size : when PS = 0 means a normal PT if its = 1 it describes a 2 MIB page.
+
+Here is the structure of the page table we will create :
+
+```text
+             CR3 ----------------> tells the CPU where is the top-level page table
+              │
+              ↓
+            PML4
+              │
+              ↓
+             PDPT
+              │
+              ↓
+              PD
+              │--------------- : PS = 1 in order to say its a 2 MiB page
+              ↓
+          2 MiB page
+```
+
+- PAE or Physical Address Extension : is a CPU feature that enables the paging structure needed.
+- EFER : we will use this command EFER.LME = 1 in order to enable long mode.
+
+Here is the transition from the Protected Mode into Long Mode :
+```text
+       Protected Mode
+          (32-bit)
+                │
+                │ build page tables
+                ▼
+              CR3
+                │
+                │ enable PAE
+                ▼
+          CR4.PAE = 1
+                │
+                │ enable Long Mode
+                ▼
+          EFER.LME = 1
+                │
+                │ enable paging
+                ▼
+           CR0.PG = 1
+                │
+                │ far jump
+                ▼
+            Long Mode
+            (64-bit)
+```
+-> The virtual address is divided into :
+
+```text
+63                       30 29       21 20                0
+┌──────────────────────────┬───────────┬───────────────────┐
+│        PML4 / PDPT       │    PD     │      OFFSET       │
+└──────────────────────────┴───────────┴───────────────────┘
+
+-> PD index covers which 2MiB page.
+-> PDPT index covers which 1 GiB of virtual memory.
+-> PML4 index covers which 512 GiB of the entire virtual address space.
+```
+
+-Starting with the PD entry :
+Bit 0 → Present (P) -------> means if the entry is valid (1) or absent(0).
+Bit 1 → Writable (R/W) ----> means if writing is allowed (1) or not (0).
+Bit 7 → Page Size (PS) ----> if 1 then its a 2MiB page or a normal PT.
+>For example : 0x83  in binary 10000011 means bit 0 = 1 , bit 1 = 1 and bit 7 = 1, so 0x83 is for the flags so if a physical address like 0x00200000 we will get 0x00200083.
+
+-For the PLM4, PDPT the flag we need are :
+bit 0 = Present = 1
+bit 1 = Writable = 1
+
+- Example : Suppose we have this
+```text
+PML4 = 0x7000
+PDPT = 0x8000
+PD   = 0x9000
+-----------------------------
+we know 0x03 is for bit 0 = 1 and bit 1 = 1 and for the PD is 0x83
+- we know that the PML4[0] point to PDPT means the base of PML4 is 0x8000
+- Adding that 0x03 we got PML4[0] = 0x80003
+- we know that the PDPT[0] points to PD means the base of PDPT is 0x9000
+- Adding that 0x03 we got PDPT[0] + 0X90003
+- For PD points to the physical memory region starting at 0x00000000.
+- Adding the flags we got PD[0] = 0x00000083.
+```
 
