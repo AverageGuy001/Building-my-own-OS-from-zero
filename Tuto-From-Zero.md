@@ -825,3 +825,70 @@ times 512-($-$$) db 0
 -And the result is AB means we got into the protected mode and we re in the level of 32 bits.
 
 <img width="1917" height="1028" alt="image" src="https://github.com/user-attachments/assets/bd3ea8c6-2876-4958-8a7a-7a2a3f56d431" />
+
+### Leaving the 32 bit mode : 
+
+-> Same concept that first transition (from the real mode to protected mode) , we can't pass to the long mode directly we must specify the CPU , and before start doing this we will explore some new concepts in order to get a better view of the whole transition.
+
+-Page : a fixed-size block of memory , the most common one in x86-64 is 4kiB = 4096 bytes for example:
+
+```text
+RAM
+
+┌──────────┐
+│ Page 0   │ 4 KiB
+├──────────┤
+│ Page 1   │ 4 KiB                  ------> here we can see that 1 page  = 4kiB
+├──────────┤
+│ Page 2   │ 4 KiB
+├──────────┤
+│ Page 3   │ 4 KiB
+├──────────┤
+│   ...    │
+└──────────┘
+
+```
+
+> We divide memory into pages in order to let the CPU/OS able to control memory into small blocks.
+
+-Physical Address : a location in RAM.
+-Virtual Address : is an address the CPU uses that can be translated into a physical address.
+here is the process for paging machanism:
+```text
+CPU
+ │
+ │ virtual address
+ │ 0x2000
+ ↓
+Paging mechanism
+ │
+ │ translates
+ ↓
+Physical address
+0x5000
+ │
+ ↓
+RAM
+```
+
+> Why using the virtual address? if program A and B have same virtual address , the OS can map them to different physical RAM.
+
+-Page table : a data structure containing each virtual page the correspondent physical page.
+
+-> Instead of having one enormous table containing every possible virtual address, x86-64 uses a hierarchy.
+```text
+PML4------------------> Page Map Level 4:which lower-level table should i use?
+ ↓
+PDPT------------------> Page Directory Pointer Table: which page directory should i use?
+ ↓
+PD--------------------> Page Directory:
+ ↓
+PT--------------------> Page Table : to the specific 4kiB page
+ ↓
+Physical page
+```
+
+-Entry : one slot inside a page table that contains information like : writable, permissions, next table ,...
+
+> For our case , we will use an identity mapping in order to make our learning simple for now so we tell the CPU basically the virtual address is the same as the physical one.
+
