@@ -989,4 +989,64 @@ we know 0x03 is for bit 0 = 1 and bit 1 = 1 and for the PD is 0x83
 - For PD points to the physical memory region starting at 0x00000000.
 - Adding the flags we got PD[0] = 0x00000083.
 ```
+In order to work in the long Mode even we are in the protected Mode , we can proceed by this way : 
+```text
+       HIGH 32 bits       LOW 32 bits
+      ┌──────────┬──────────────────┐
+      │ 00000000 │     00004003     │
+      └──────────┴──────────────────┘
+-> In this case :
+High = 0x00000000 and Low = 0x00004003
+```
+-For PML4 : PML4[0] address = 0x3000 means
+[0x3000] = LOW
+[0x3004] = HIGH
+```nasm
+  mov dword [0x3000], 0x4003
+  mov dword [0x3004] , 0x0000
+(Same for the others)
+```
+- How to enable the PAE?
+CR4 is one of the registers , inside it they are many bits . The bit 5 = PAE means the bit of PAE is 2^5 = 32 = 0x20
+In order to enable it by ```mov cr4,0x20``` then PAE is enabled.
 
+- How to enable the EFR.LME?
+EFR contains so many bits and the 8 bit is LME . The bit of EFR.LME is 2^8 = 256 means the bit of EFR.LME = 0x100
+In order to enable it by :
+```nasm
+And because EFER is a Model Specific Register so have his instructions:
+rdmsr (for reading) and wrmsr (for writing)
+-----------------------------------------------------------------------
+mov ecx , 0xC00000080
+rdmsr
+or eax , 0x100
+wrmsr
+```
+-How to deal with CR0.PG?
+CR0 is another CPU control register while the bit 31 = PG means the bit of PG is 2^31 = 0x80000000
+In order to enable it (same in the case of CR0):
+```nasm
+mov eax , cr0
+or eax , 0x80000000                    -> here if it s = 0 paging is disabled if it's 1 then enabled.
+mov cr0,eax
+```
+>Even we have everything is enabled we can't pass the transition because we already still have the CS in the protected mode so we need a gdt descriptor in order to make 64-bit code segment
+
+- We already know this :
+```text
+Entry 0 → Null
+Entry 1 → 32-bit Code
+Entry 2 → Data
+So here we will add the entry 3 for 64-bit code with the address : base + 0x18
+and we will do a jump : jmp 0x18:long_mode_entry
+```
+> A difference we will observe in D/B is a default for 32-bit so in the 64-bit code we will uses his own rules so instead of having L=0, D/B=1 in 64-bit code L=1, D/B = 0 then we will have in this mode : 0x00AF9A000000FFFF, and for data flags will be same .
+
+-The new GDT : 
+```nasm
+gdt_start:
+  dq 0x0000000000000000; Entry 0 (null)
+  dq 0x00CF9A000000FFFF; Entry 1 (32-bit)
+  dq 0x00CF92000000FFFF; Entry 2 (data)
+  dq 0x00AF9A000000FFFF; Entry 3 (64-bit)
+```
