@@ -1050,3 +1050,122 @@ gdt_start:
   dq 0x00CF92000000FFFF; Entry 2 (data)
   dq 0x00AF9A000000FFFF; Entry 3 (64-bit)
 ```
+
+-> Here is the final code for stage2.asm in order to test if we reach the long mode (64 bit):
+
+```nasm
+bits 16
+org 0x1000
+default abs
+
+stage2_start:
+    cli
+    cld
+    xor ax, ax
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov sp, 0x7C00
+
+    ; Marker: Stage 2 started
+    mov ah, 0x0E
+    mov al, 'B'
+    int 0x10
+
+    ; Load GDT
+    lgdt [gdt_descriptor]
+
+    ; Enable Protected Mode
+    mov eax, cr0
+    or eax, 1
+    mov cr0, eax
+    jmp dword 0x08:protected_mode_entry
+
+bits 32
+protected_mode_entry:
+    mov ax, 0x10
+    mov ds, ax
+    mov es, ax
+    mov ss, ax
+    mov fs, ax
+    mov gs, ax
+    mov esp, 0x90000
+
+    ; Clear page tables: 0x3000, 0x4000, 0x5000
+    xor eax, eax
+    mov edi, 0x3000
+    mov ecx, 3072
+    rep stosd
+
+    ; PML4[0] -> PDPT
+    mov dword [0x3000], 0x4003
+    mov dword [0x3004], 0
+
+    ; PDPT[0] -> Page Directory
+    mov dword [0x4000], 0x5003
+    mov dword [0x4004], 0
+
+    ; Identity-map the first 2 MiB using a large page
+    mov dword [0x5000], 0x0083
+    mov dword [0x5004], 0
+
+    ; Enable PAE
+    mov eax, cr4
+    or eax, 1 << 5
+    mov cr4, eax
+
+    ; Set CR3 to the PML4
+    mov eax, 0x3000
+    mov cr3, eax
+
+    ; Enable Long Mode in EFER
+    mov ecx, 0xC0000080
+    rdmsr
+    or eax, 1 << 8
+    wrmsr
+
+    ; Enable paging
+    mov eax, cr0
+    or eax, 1 << 31
+    mov cr0, eax
+
+    ; Far jump into the 64-bit code segment
+    jmp 0x18:long_mode_entry
+
+bits 64
+long_mode_entry:
+    ; Display L only after reaching 64-bit mode
+    mov word [abs 0xB8000], 0x0F4C
+
+.hang:
+    hlt
+    jmp .hang
+
+align 8
+gdt_start:
+    dq 0x0000000000000000
+    dq 0x00CF9A000000FFFF    ; 0x08: 32-bit code
+    dq 0x00CF92000000FFFF    ; 0x10: data
+    dq 0x00AF9A000000FFFF    ; 0x18: 64-bit code
+gdt_end:
+
+gdt_descriptor:
+    dw gdt_end - gdt_start - 1
+    dd gdt_start
+
+times 512 - ($ - $$) db 0
+```
+By assembling and updating the disk image with this commands:
+
+```nasm
+nasm -f bin stage2.asm -o stage2.bin
+wc -c stage2.bin (must be 512)
+cat boot.bin stage2.bin > disk.img
+```
+Then the result will appear like this :
+
+<img width="720" height="466" alt="image" src="https://github.com/user-attachments/assets/e1800c38-3974-4792-a87e-7ef457fb7024" />
+
+As you can see AB for sure as we configured it in 16/32 mode , then using VGA we print L! that will appear in the top left corner . And if it worked then , we got to the Long mode.
+
+
