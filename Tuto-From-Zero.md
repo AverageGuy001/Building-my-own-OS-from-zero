@@ -1169,3 +1169,20 @@ Then the result will appear like this :
 As you can see AB for sure as we configured it in 16/32 mode , then using VGA we print L! that will appear in the top left corner . And if it worked then , we got to the Long mode.
 
 
+Level 2 : Loading and executing our first kernel.
+
+-> First thing to start is after doing all that transition , the CPU must know where kernel start so here comes the kernel Entry Point.
+```nasm
+[BITS 64]--------------------------------------------------------> Tells the assembly to execute based on 64-bit instructions.
+
+global kernel_entry----------------------------------------------> For the Linker Script.
+
+kernel_entry: ---------------------------------------------------> the label for the kernel entry
+    ; We are now executing in 64-bit mode
+
+    cli ---------------------------------------------------------> Clear Interrupt Flag means its ignoring external hardware interrupts like mouse click, keyboard press,...
+
+    hlt ---------------------------------------------------------> Halt means puts the CPU on idle and stops from executing any more instructions until an external hardware interrupts happened.
+```
+
+
