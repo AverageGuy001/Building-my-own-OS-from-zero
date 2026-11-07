@@ -1312,6 +1312,6 @@ run: disk.img
 
 -> The result will be like that:
 
-https://github.com/user-attachments/assets/d8dbbd08-8381-47fc-bc8f-b7c830cb5b37
+
 
 
