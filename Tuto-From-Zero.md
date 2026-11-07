@@ -1195,5 +1195,123 @@ kernel_entry: ---------------------------------------------------> the label for
 ```
 -> Lets create the kernel entry asm file:
 
+```nasm
+[BITS 64]
+
+global kernel_entry
+extern kernel_main -------------------------------------> Tells that kernel_main exist in a place
+
+kernel_entry:
+    ; 1. Set up a clean stack pointer
+    mov rsp, 0x90000 -----------------------------------> Sets the RSP to the addr
+
+    ; 2. Call our high-level C function
+    call kernel_main -----------------------------------> calling the function
+
+    ; 3. If kernel_main ever returns, halt the CPU
+.hang:
+    cli
+    hlt
+    jmp .hang
+```
+-> Now , we will create a kernel.c file:
+```C
+// we are using a freestanding env so there is no printf message
+#include <stdint.h> 
+
+void kernel_main(void) {
+    // VGA text buffer pointer for 64-bit mode
+    volatile uint16_t* vga_buffer = (volatile uint16_t*)0xB8000;
+    
+    // Print "KERNEL OK" in white text on a black background (Attribute: 0x0F)
+    const char* message = "KERNEL OK";
+
+    // VGA contains two groups the low section contains the value and the upper contains the color
+    for (int i = 0; message[i] != '\0'; i++) {
+        vga_buffer[i] = (0x0F << 8) | message[i];
+    }
+
+    // Hang the CPU so it doesn't run off into random memory
+    while (1) {
+        __asm__("hlt");
+    }
+}
+```
+-> To not forget we must create the linker script so it knows where to place the kernel function in the physical memory.
+
+```
+ENTRY(kernel_entry)
+SECTIONS {
+    . = 0x100000;
+
+    .text : {
+        *(.text)
+    }
+
+    .data : {
+        *(.data)
+    }
+
+    .rodata : {
+        *(.rodata)
+    }
+
+    .bss : {
+        *(.bss)
+    }
+}
+```
+
+-> We already notice there is some commands we repeat them over and over , so the solution we will automate this process 
+by using MakeFile as we already talk about it .
+
+```text
+ASM = nasm
+CC = gcc
+LD = ld
+
+CFLAGS = -ffreestanding -m64 -c ---------------------------> tells the gcc not to assume standard library
+LDFLAGS = -T linker.ld -nostdlib ----------------------------> tells the linker to not include standard libraries
+
+all: disk.img
+
+# 1. Compile Bootloader (Stage 1)
+boot.bin: boot.asm
+	$(ASM) -f bin boot.asm -o boot.bin
+
+# 2. Compile Stage 2 Loader
+stage2.bin: stage2.asm
+	$(ASM) -f bin stage2.asm -o stage2.bin
+
+# 3. Compile Kernel Entry Stub
+kernel_entry.o: kernel_entry.asm
+	$(ASM) -f elf64 kernel_entry.asm -o kernel_entry.o
+
+# 4. Compile C Kernel Code
+kernel.o: kernel.c
+	$(CC) $(CFLAGS) kernel.c -o kernel.o
+
+# 5. Link Kernel Objects into final binary
+kernel.bin: kernel_entry.o kernel.o
+	$(LD) $(LDFLAGS) kernel_entry.o kernel.o -o kernel.bin
+
+# 6. Create the final bootable disk image
+disk.img: boot.bin stage2.bin kernel.bin
+	cat boot.bin stage2.bin kernel.bin > disk.img
+
+# Clean up build files
+clean:
+	rm -f *.bin *.o *.img
+
+# Run in QEMU
+run: disk.img
+	qemu-system-x86_64 -drive format=raw,file=disk.img
+```
+
+> We used A,B,L! for checking if it works from now on delete them and all the commands are in two words :make run
+
+-> The result will be like that:
+
+https://github.com/user-attachments/assets/d8dbbd08-8381-47fc-bc8f-b7c830cb5b37
 
 
