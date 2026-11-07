@@ -1185,4 +1185,15 @@ kernel_entry: ---------------------------------------------------> the label for
     hlt ---------------------------------------------------------> Halt means puts the CPU on idle and stops from executing any more instructions until an external hardware interrupts happened.
 ```
 
+-> This how we will procceed now:
+```
+                                    Stage 2 — Long mode
+                                            |
+                                    kernel_entry.asm  
+                                            |
+                                    kernel_main()
+```
+-> Lets create the kernel entry asm file:
+
+
 
