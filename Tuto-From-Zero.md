@@ -1312,6 +1312,53 @@ run: disk.img
 
 -> The result will be like that:
 
+https://github.com/user-attachments/assets/e51c10a1-7765-451c-83f8-3d903fd82c4b
+
+-> Types of Communication :
+- Memory-Mapped I/O : mapping by physical memory address space in the RAM here the CPU can use move to read/write to them.
+- Port-Mapped I/O : mapping by a separate isolated 16 bit address space containing 65 536 possible ports, here the CPU he must use assembly instructions like in and out to talk to motherboard controller chips.
+
+-> Now we will update the kernel.c : 
+```C
+#include <stdint.h>
+
+// define some constant for VGA
+#define VGA_ADD 0xB8000
+#define VGA_ROWS 25
+#define VGA_COLS 80
+
+enum vga_color {
+    VGA_COLOR_BLACK = 0,
+    VGA_COLOR_BLUE = 1,
+    VGA_COLOR_GREEN = 2,
+    VGA_COLOR_CYAN = 3,
+    VGA_COLOR_RED = 4,
+    VGA_COLOR_MAGENTA = 5,
+    VGA_COLOR_BROWN = 6,
+    VGA_COLOR_LIGHT_GREY = 7,
+    VGA_COLOR_DARK_GREY = 8,
+    VGA_COLOR_LIGHT_BLUE = 9,
+    VGA_COLOR_LIGHT_GREEN = 10,
+    VGA_COLOR_LIGHT_CYAN = 11,
+    VGA_COLOR_LIGHT_RED = 12,
+    VGA_COLOR_LIGHT_MAGENTA = 13,
+    VGA_COLOR_LIGHT_BROWN = 14,
+    VGA_COLOR_WHITE = 15,
+};
+
+// creating a function that will help us on combining between background color and foreground color
+// we will have 8 bits the first 4 bits will be reserved for background and the others for foreground
+static inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg){
+	return fg | (bg << 4);
+}
+
+// creating a function that will help us on combining between content and color
+// we will have 16 bits the first 8 bits will be reserved for color and the others for value
+static inline uint16_t vga_entry(unsigned char content, uint8_t color){
+	return (uint16_t) content |(uint16_t) (color << 8);
+
+
+```
 
 
 
